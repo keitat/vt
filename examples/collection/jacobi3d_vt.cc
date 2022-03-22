@@ -99,7 +99,7 @@ private:
   size_t numObjsX_ = 1, numObjsY_ = 1, numObjsZ_ = 1;
   size_t numRowsPerObject_ = default_nrow_object;
   // Not used at this moment. We may want to have non-qubic domain in future.
-  // size_t numColsPerObject_ = default_ncol_object; 
+  // size_t numColsPerObject_ = default_ncol_object;
   size_t maxIter_ = 5;
   NodeObjProxy objProxy_; // Similar to MPI_Comm/MPI_Group?
 
@@ -174,19 +174,19 @@ public:
     size_t ldz = numRowsPerObject_ + 2;
 
     for (size_t jy = 0; jy < ldy; ++jy)  // All XY at jz = 0
-      for (size_t jx = 0; jx < ldx; ++jx)  
+      for (size_t jx = 0; jx < ldx; ++jx)
         tcur_[jx + jy * ldx] = told_[jx + jy * ldx];
 
     for (size_t jy = 0; jy < ldy; ++jy)  // All XY at jz = jdz-1
-      for (size_t jx = 0; jx < ldx; ++jx)  
-        tcur_[jx + jy * ldx + (ldz-1) * ldx * ldy] = told_[jx + jy * ldx + (ldz-1) * ldx * ldy]; 
+      for (size_t jx = 0; jx < ldx; ++jx)
+        tcur_[jx + jy * ldx + (ldz-1) * ldx * ldy] = told_[jx + jy * ldx + (ldz-1) * ldx * ldy];
 
     for (size_t jz = 0; jz < ldz; ++jz) //  All XZ at jy = 0
-      for (size_t jx = 0; jx < ldx; ++jx) 
+      for (size_t jx = 0; jx < ldx; ++jx)
         tcur_[jx + jz * ldx * ldy] = told_[jx + jz * ldx *ldy];
 
     for (size_t jz = 0; jz < ldz; ++jz)  // All XZ at jy = ldy-1
-      for (size_t jx = 0; jx < ldx; ++jx)  
+      for (size_t jx = 0; jx < ldx; ++jx)
         tcur_[jx + (ldy-1) * ldx + jz * ldx * ldy] = told_[jx + (ldy-1) * ldx + jz * ldx * ldy];
 
     for (size_t jy = 0; jy < ldy; ++jy)  // All YZ at jx = 0
@@ -194,7 +194,7 @@ public:
         tcur_[jy * ldx + jz * ldx * ldy] = told_[jy * ldx + jz * ldx * ldy];
 
     for (size_t jy = 0; jy < ldy; ++jy)  // All YZ at jx = ldx-1
-      for (size_t jz = 0; jz < ldz; ++jz)  
+      for (size_t jz = 0; jz < ldz; ++jz)
         tcur_[ldx-1 + jy * ldx + jz * ldx * ldy] = told_[ldx-1 + jy * ldx + jz * ldx * ldy];
 
     //
@@ -208,17 +208,17 @@ public:
           //---- Jacobi iteration step for
           //---- A banded matrix for the 7-point stencil
           //---- [ 0.0  -1.0   0.0]
-          //---- [-1.0]  
-          //---- [-1.0   6.0  -1.0]  
-          //---- [-1.0]  
+          //---- [-1.0]
+          //---- [-1.0   6.0  -1.0]
+          //---- [-1.0]
           //---- [ 0.0  -1.0   0.0]
           //---- rhs_ right hand side vector
           //
           size_t node = ix + iy * ldx + iz * ldx * ldy;
           //size_t node = ix + iy * ldx;
-          tcur_[node] = (1.0/6.0) * (rhs_[node] 
+          tcur_[node] = (1.0/6.0) * (rhs_[node]
                              + told_[node - 1] + told_[node + 1]
-                             + told_[node - ldx] + told_[node + ldx] 
+                             + told_[node - ldx] + told_[node + ldx]
                              + told_[node - ldx*ldy] + told_[node + ldx*ldy]);
         }
       }
@@ -250,7 +250,7 @@ public:
     auto proxy = this->getCollectionProxy();
     auto cb = vt::theCB()->makeSend<
       LinearPb3DJacobi,ReduxMsg,&LinearPb3DJacobi::checkCompleteCB
-    >(proxy(0,0,0)); 
+    >(proxy(0,0,0));
     auto msg2 = vt::makeMessage<ReduxMsg>(maxNorm);
     proxy.reduce<vt::collective::MaxOp<double>>(msg2.get(),cb);
   }
@@ -295,7 +295,7 @@ public:
       const size_t ny = msg->ny;
       for (size_t jz = 0; jz < nz ; ++jz) { // msg->val_size
         for (size_t jy = 0; jy < ny ; ++jy) {
-          this->told_[0+jy*ldx+ ldx*ldy*jz] = 
+          this->told_[0+jy*ldx+ ldx*ldy*jz] =
                    msg->val[jy+jz*ny]; // Need to think
         }
       }
@@ -335,7 +335,7 @@ public:
       const size_t nx = msg->nx;
       for (size_t jz = 0; jz < nz; ++jz) {
         for (size_t jx = 0; jx < nx; ++jx) {
-          this->told_[jx+ ldx * (numRowsPerObject_ + 1) + ldx*ldy*jz] =  msg->val[jx+jz*nx]; 
+          this->told_[jx+ ldx * (numRowsPerObject_ + 1) + ldx*ldy*jz] =  msg->val[jx+jz*nx];
         }
       }
       msgReceived_ += 1;
@@ -395,7 +395,6 @@ public:
     auto const y = idx.y();
     auto const z = idx.z();
 
-    // 1/31/2022 Not finished the space allocation 
     if (x > 0) {
       std::vector<double> tcopy( (numRowsPerObject_ + 2) * (numRowsPerObject_ + 2)  , 0.0); // size needs to be changed
       size_t rx = 0;
@@ -403,7 +402,7 @@ public:
       size_t rz = numRowsPerObject_ + 2;
       size_t ldx = numRowsPerObject_ + 2;
       size_t ldy = numRowsPerObject_ + 2;
-      // No ghost 
+      // No ghost
       for (size_t jz = 1; jz <= numRowsPerObject_; ++jz)
         for (size_t jy = 1; jy <= numRowsPerObject_; ++jy)
            tcopy[jy+jz*ry] = told_[1 + jy * ldx + jz * ldx *ldy]; // put YZ plane for X=1
@@ -418,7 +417,7 @@ public:
       size_t rz = numRowsPerObject_ + 2;
       size_t ldx = numRowsPerObject_ + 2;
       size_t ldy = numRowsPerObject_ + 2;
-      // No ghost 
+      // No ghost
       for (size_t jz = 1; jz <= numRowsPerObject_; ++jz)
         for (size_t jx = 1; jx <= numRowsPerObject_; ++jx)
           tcopy[jx+rx*jz] = told_[jx + ldx + jz * ldx * ldy];
@@ -432,7 +431,7 @@ public:
       size_t rz = 0;
       size_t ldx = numRowsPerObject_ + 2;
       size_t ldy = numRowsPerObject_ + 2;
-      // No ghost 
+      // No ghost
       for (size_t jy = 1; jy <= numRowsPerObject_; ++jy)
         for (size_t jx = 1; jx <= numRowsPerObject_; ++jx)
           tcopy[jx+rx*jy] = told_[jx + jy * ldx + ldx * ldy ];
@@ -448,7 +447,7 @@ public:
       size_t ldx = numRowsPerObject_ + 2;
       size_t ldy = numRowsPerObject_ + 2;
 
-      // No ghost 
+      // No ghost
       for (size_t jz = 1; jz <= numRowsPerObject_; ++jz) {
         for (size_t jy = 1; jy <= numRowsPerObject_; ++jy) {
           tcopy[jy+jz*ry] = told_[ (ldx - 2) + jy * ldx + jz * ldx * ldy ];
@@ -517,7 +516,7 @@ public:
     auto idx = this->getIndex();
 
     for (size_t iz = 0; iz < ldz; ++iz) {
-      for (size_t iy = 0; iy < ldy; ++iy) { 
+      for (size_t iy = 0; iy < ldy; ++iy) {
         for (size_t ix = 0; ix < ldx; ++ix) {
           double x0 = ( numRowsPerObject_ * idx.x() + ix) * hx;
           double y0 = ( numRowsPerObject_ * idx.y() + iy) * hy;
@@ -543,21 +542,21 @@ public:
     if (idx.x() == 0) {
       for (size_t jz = 0; jz < ldz; ++jz)
         for (size_t jy = 0; jy < ldy; ++jy)
-          tcur_[jy * ldx + jz * ldx * ldy] = 0.0; 
+          tcur_[jy * ldx + jz * ldx * ldy] = 0.0;
       totalReceive_ -= 1;
     }
 
     if (idx.y() == 0) {
       for (size_t jz = 0; jz < ldz; ++jz)
         for (size_t jx = 0; jx < ldx; ++jx)
-          tcur_[jx + jz * ldx * ldy] = 0.0; 
+          tcur_[jx + jz * ldx * ldy] = 0.0;
       totalReceive_ -= 1;
     }
 
     if (idx.z() == 0) {
       for (size_t jy = 0; jy < ldy; ++jy)
         for (size_t jx = 0; jx < ldx; ++jx)
-          tcur_[jx + jy * ldx] = 0.0; 
+          tcur_[jx + jy * ldx] = 0.0;
       totalReceive_ -= 1;
     }
 
