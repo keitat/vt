@@ -183,11 +183,10 @@ void ActiveMessenger::startup() {
 }
 
 trace::TraceEventIDType ActiveMessenger::makeTraceCreationSend(
-  HandlerType const handler, auto_registry::RegistryTypeEnum type,
-  ByteType serialized_msg_size, bool is_bcast
+  HandlerType const handler, ByteType serialized_msg_size, bool is_bcast
 ) {
   #if vt_check_enabled(trace_enabled)
-    trace::TraceEntryIDType ep = auto_registry::handlerTraceID(handler, type);
+    trace::TraceEntryIDType ep = auto_registry::handlerTraceID(handler);
     trace::TraceEventIDType event = trace::no_trace_event;
     if (not is_bcast) {
       event = theTrace()->messageCreation(ep, serialized_msg_size);
@@ -449,17 +448,7 @@ EventType ActiveMessenger::sendMsgBytes(
     theTerm()->hangDetectSend();
   }
 
-  if (theContext()->getTask() != nullptr) {
-    auto lb = theContext()->getTask()->get<ctx::LBStats>();
-    if (lb) {
-      auto const already_recorded =
-        envelopeCommStatsRecordedAboveBareHandler(msg->env);
-      if (not already_recorded) {
-        auto dest_elm_id = elm::ElmIDBits::createBareHandler(dest);
-        theContext()->getTask()->send(dest_elm_id, msg_size);
-      }
-    }
-  }
+  recordLbStatsCommForSend(dest, base, msg_size);
 
   return event_id;
 }
@@ -496,12 +485,7 @@ EventType ActiveMessenger::doMessageSend(
     envelopeSetHandler(msg->env, handler);
 
     if (not is_bcast or (is_bcast and dest == this_node_)) {
-      // auto cur_event = envelopeGetTraceEvent(msg->env);
-      // if (cur_event == trace::no_trace_event) {
-      auto event = makeTraceCreationSend(
-        handler, auto_registry::RegistryTypeEnum::RegGeneral,
-        base.size(), is_bcast
-      );
+      auto const event = makeTraceCreationSend(handler, base.size(), is_bcast);
       envelopeSetTraceEvent(msg->env, event);
     }
 
@@ -528,17 +512,7 @@ EventType ActiveMessenger::doMessageSend(
     if (dest != this_node) {
       sendMsgBytesWithPut(dest, base, send_tag);
     } else {
-      if (theContext()->getTask() != nullptr) {
-        auto lb = theContext()->getTask()->get<ctx::LBStats>();
-        if (lb) {
-          auto const already_recorded =
-            envelopeCommStatsRecordedAboveBareHandler(msg->env);
-          if (not already_recorded) {
-            auto dest_elm_id = elm::ElmIDBits::createBareHandler(dest);
-            theContext()->getTask()->send(dest_elm_id, base.size());
-          }
-        }
-      }
+      recordLbStatsCommForSend(dest, base, base.size());
 
       runnable::makeRunnable(base, true, envelopeGetHandler(msg->env), dest)
         .withTDEpochFromMsg(is_term)
@@ -911,6 +885,26 @@ void ActiveMessenger::finishPendingDataMsgAsyncRecv(InProgressDataIRecv* irecv) 
       theTerm()->hangDetectRecv();
     };
     theSched()->enqueue(irecv->priority, run);
+  }
+}
+
+void ActiveMessenger::recordLbStatsCommForSend(
+  NodeType const dest, MsgSharedPtr<BaseMsgType> const& base,
+  MsgSizeType const msg_size
+) {
+  if (theContext()->getTask() != nullptr) {
+    auto lb = theContext()->getTask()->get<ctx::LBStats>();
+
+    if (lb) {
+      auto const& msg = base.get();
+      auto const already_recorded =
+        envelopeCommStatsRecordedAboveBareHandler(msg->env);
+
+      if (not already_recorded) {
+        auto dest_elm_id = elm::ElmIDBits::createBareHandler(dest);
+        theContext()->getTask()->send(dest_elm_id, msg_size);
+      }
+    }
   }
 }
 

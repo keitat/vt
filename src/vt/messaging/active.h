@@ -398,8 +398,7 @@ struct ActiveMessenger : runtime::component::PollableComponent<ActiveMessenger> 
   void setTagMessage(MsgT* msg, TagType tag);
 
   trace::TraceEventIDType makeTraceCreationSend(
-    HandlerType const handler, auto_registry::RegistryTypeEnum type,
-    ByteType serialized_msg_size, bool is_bcast
+    HandlerType const handler, ByteType serialized_msg_size, bool is_bcast
   );
 
   // With serialization, the correct method is resolved via SFINAE.
@@ -1724,6 +1723,18 @@ private:
    * \brief Called when a VT-MPI message has been received.
    */
   void finishPendingDataMsgAsyncRecv(InProgressDataIRecv* irecv);
+
+  /**
+   * @brief Record LB's statistics for sending a message
+   *
+   * \param[in] dest the destination of the message
+   * \param[in] base the message base pointer
+   * \param[in] msg_size the size of the message being sent
+   */
+  void recordLbStatsCommForSend(
+    NodeType const dest, MsgSharedPtr<BaseMsgType> const& base,
+    MsgSizeType const msg_size
+  );
 
 private:
 # if vt_check_enabled(trace_enabled)

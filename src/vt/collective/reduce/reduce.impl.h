@@ -72,13 +72,12 @@ void Reduce::reduceUpHan(MsgT* msg) {
 
 template <typename MsgT>
 void Reduce::reduceRootRecv(MsgT* msg) {
-  auto const& handler = msg->combine_handler_;
+  auto const handler = msg->combine_handler_;
   msg->next_ = nullptr;
   msg->count_ = 1;
   msg->is_root_ = true;
 
-  auto const& from_node = theContext()->getFromNodeCurrentTask();
-
+  auto const from_node = theContext()->getFromNodeCurrentTask();
   auto m = promoteMsg(msg);
   runnable::makeRunnable(m, false, handler, from_node)
     .withTDEpochFromMsg()
@@ -253,8 +252,8 @@ void Reduce::startReduce(detail::ReduceStamp id, bool use_num_contrib) {
        *  Invoke user handler to run the functor that combines messages,
        *  applying the reduction operator
        */
-      auto const& handler = state.combine_handler_;
-      auto const& from_node = theContext()->getFromNodeCurrentTask();
+      auto const handler = state.combine_handler_;
+      auto const from_node = theContext()->getFromNodeCurrentTask();
 
       // this needs to run inline.. threaded not allowed for reduction
       // combination

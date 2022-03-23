@@ -74,8 +74,8 @@ template <typename UserMsgT>
 /*static*/ void SerializedMessenger::serialMsgHandlerBcast(
   SerialWrapperMsgType<UserMsgT>* sys_msg
 ) {
-  auto const& handler = sys_msg->handler;
-  auto const& ptr_size = sys_msg->ptr_size;
+  auto const handler = sys_msg->handler;
+  auto const ptr_size = sys_msg->ptr_size;
 
   vt_debug_print(
     normal, serial_msg,
@@ -98,9 +98,9 @@ template <typename UserMsgT>
   SerialWrapperMsgType<UserMsgT>* sys_msg
 ) {
   auto const handler = sys_msg->handler;
-  auto const& recv_tag = sys_msg->data_recv_tag;
-  auto const& nchunks = sys_msg->nchunks;
-  auto const& len = sys_msg->ptr_size;
+  auto const recv_tag = sys_msg->data_recv_tag;
+  auto const nchunks = sys_msg->nchunks;
+  auto const len = sys_msg->ptr_size;
   auto const epoch = envelopeGetEpoch(sys_msg->env);
 
   vt_debug_print(
@@ -119,8 +119,8 @@ template <typename UserMsgT>
   auto node = sys_msg->from_node;
   theMsg()->recvDataDirect(
     nchunks, recv_tag, sys_msg->from_node, len,
-    [handler,recv_tag,node,epoch,is_valid_epoch]
-    (RDMA_GetType ptr, ActionType action){
+    [handler, recv_tag, node, epoch, is_valid_epoch]
+    (RDMA_GetType ptr, ActionType action) {
       // be careful here not to use "sys_msg", it is no longer valid
       auto msg_data = reinterpret_cast<SerialByteType*>(std::get<0>(ptr));
       auto msg = deserializeFullMessage<UserMsgT>(msg_data);
@@ -406,7 +406,7 @@ template <typename MsgT, typename BaseT>
         );
 
         auto base_msg = msg.template to<BaseMsgType>();
-        return messaging::PendingSend(base_msg, [=](MsgPtr<BaseMsgType> in){
+        return messaging::PendingSend(base_msg, [=](MsgPtr<BaseMsgType> in) {
           runnable::makeRunnable(msg, true, typed_handler, node)
             .withTDEpochFromMsg()
             .enqueue();

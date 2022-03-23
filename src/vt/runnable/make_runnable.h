@@ -64,8 +64,6 @@ namespace vt { namespace runnable {
  */
 template <typename MsgT>
 struct RunnableMaker {
-  using RegistryTypeEnum = auto_registry::RegistryTypeEnum;
-
   /**
    * \internal \brief Construct the builder. Shall not be called directly.
    *
@@ -77,12 +75,11 @@ struct RunnableMaker {
    */
   RunnableMaker(
     std::unique_ptr<RunnableNew> in_impl, MsgSharedPtr<MsgT> const& in_msg,
-    HandlerType in_handler, RegistryTypeEnum in_han_type, NodeType in_from_node
+    HandlerType in_handler, NodeType in_from_node
   ) : impl_(std::move(in_impl)),
       msg_(in_msg),
       handler_(in_handler),
       is_void_(in_msg == nullptr),
-      han_type_(in_han_type),
       from_node_(in_from_node)
   { }
   RunnableMaker(RunnableMaker const&) = delete;
@@ -229,7 +226,7 @@ struct RunnableMaker {
     uint64_t idx1, uint64_t idx2, uint64_t idx3, uint64_t idx4
   ) {
     impl_->template addContext<ctx::Trace>(
-      msg_, trace_event, handler_, from_node_, han_type_, idx1, idx2, idx3, idx4
+      msg_, trace_event, handler_, from_node_, idx1, idx2, idx3, idx4
     );
     return std::move(*this);
   }
@@ -301,7 +298,6 @@ private:
   bool set_handler_ = false;
   TagType tag_ = no_tag;
   bool is_void_ = false;
-  RegistryTypeEnum han_type_ = RegistryTypeEnum::RegGeneral;
   NodeType from_node_ = uninitialized_destination;
   bool is_done_ = false;
 };
@@ -313,24 +309,24 @@ private:
  * \param[in] is_threaded whether it is threaded
  * \param[in] handler the handler bits
  * \param[in] from the node that caused this runnable to execute
- * \param[in] han_type the type of handler (default RegGeneral)
+ * \param[in] han_type the type of handler
  *
  * \return the maker for further customization
  */
 template <typename U>
 RunnableMaker<U> makeRunnable(
-  MsgSharedPtr<U> const& msg, bool is_threaded, HandlerType handler,
-  NodeType from, auto_registry::RegistryTypeEnum han_type =
-  auto_registry::RegistryTypeEnum::RegGeneral
+  MsgSharedPtr<U> const& msg, bool is_threaded, HandlerType handler, NodeType from
 ) {
   auto r = std::make_unique<RunnableNew>(msg, is_threaded);
+  auto const han_type = HandlerManager::getHandlerRegistryType(handler);
   if (han_type == auto_registry::RegistryTypeEnum::RegVrt or
-      han_type == auto_registry::RegistryTypeEnum::RegGeneral) {
-    r->template addContext<ctx::Trace>(msg, handler, from, han_type);
+      han_type == auto_registry::RegistryTypeEnum::RegGeneral or
+      han_type == auto_registry::RegistryTypeEnum::RegObjGroup) {
+    r->template addContext<ctx::Trace>(msg, handler, from);
   }
   r->template addContext<ctx::FromNode>(from);
   r->template addContext<ctx::SetContext>(r.get());
-  return RunnableMaker<U>{std::move(r), msg, handler, han_type, from};
+  return RunnableMaker<U>{std::move(r), msg, handler, from};
 }
 
 /**
@@ -339,20 +335,18 @@ RunnableMaker<U> makeRunnable(
  * \param[in] is_threaded whether it is threaded
  * \param[in] handler the handler bits
  * \param[in] from the node that caused this runnable to execute
- * \param[in] han_type the type of handler (default RegGeneral)
  *
  * \return the maker for further customization
  */
 inline RunnableMaker<BaseMsgType> makeRunnableVoid(
-  bool is_threaded, HandlerType handler,
-  NodeType from, auto_registry::RegistryTypeEnum han_type =
-  auto_registry::RegistryTypeEnum::RegGeneral
+  bool is_threaded, HandlerType handler, NodeType from
 ) {
+  // These are currently only types of registry entries that can be void
   auto r = std::make_unique<RunnableNew>(is_threaded);
   // @todo: figure out how to trace this?
   r->template addContext<ctx::FromNode>(from);
   r->template addContext<ctx::SetContext>(r.get());
-  return RunnableMaker<BaseMsgType>{std::move(r), nullptr, handler, han_type, from};
+  return RunnableMaker<BaseMsgType>{std::move(r), nullptr, handler, from};
 }
 
 }} /* end namespace vt::runnable */

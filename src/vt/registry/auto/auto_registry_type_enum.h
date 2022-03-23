@@ -2,7 +2,7 @@
 //@HEADER
 // *****************************************************************************
 //
-//                              vt_git_revision.h
+//                          auto_registry_type_enum.h
 //                       DARMA/vt => Virtual Transport
 //
 // Copyright 2019-2021 National Technology & Engineering Solutions of Sandia, LLC
@@ -41,15 +41,24 @@
 //@HEADER
 */
 
-#if !defined VT_CONFIG_GIT_REVISION_H
-#define VT_CONFIG_GIT_REVISION_H
+#if !defined INCLUDED_VT_REGISTRY_AUTO_AUTO_REGISTRY_TYPE_ENUM_H
+#define INCLUDED_VT_REGISTRY_AUTO_AUTO_REGISTRY_TYPE_ENUM_H
 
-#include <string>
+namespace vt { namespace auto_registry {
 
-extern std::string const vt_git_sha1;
-extern std::string const vt_git_exact_tag;
-extern std::string const vt_git_refspec;
-extern std::string const vt_git_description;
-extern std::string const vt_git_clean_status;
+enum struct RegistryTypeEnum {
+  RegGeneral = 1,
+  RegMap,
+  RegVrt,
+  RegSeed,
+  RegVrtCollection,
+  RegVrtCollectionMember,
+  RegRDMAGet,
+  RegRDMAPut,
+  RegIndex,
+  RegObjGroup
+};
 
-#endif /*VT_CONFIG_GIT_REVISION_H*/
+}} // end namespace vt::auto_registry
+
+#endif /*INCLUDED_VT_REGISTRY_AUTO_AUTO_REGISTRY_TYPE_ENUM_H*/
